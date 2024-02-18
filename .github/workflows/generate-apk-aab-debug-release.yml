@@ -8,13 +8,13 @@ env:
   playstore_name: SFWIG
 
 on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
 
   push:
     branches:
-      - 'master/**'
+      - 'master'
 
-  # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
 
 jobs:
   build:
@@ -51,8 +51,8 @@ jobs:
         run: ./gradlew build
 
       # Create APK Debug
-      - name: Build apk debug project (APK) - ${{ env.main_project_module }} module
-        run: ./gradlew assembleDebug
+      # - name: Build apk debug project (APK) - ${{ env.main_project_module }} module
+      #   run: ./gradlew assembleDebug
 
       # Create APK Release
       - name: Build apk release project (APK) - ${{ env.main_project_module }} module
