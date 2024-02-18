@@ -23,16 +23,16 @@ To download the apk, press the following button:
     </thead>
     <tbody>
         <tr> 
-            <td><center><img alt="SFWIG Home page" src="https://github.com/JaumeAlbardaner/SFWIG/img/SFWIG1.png" />
+            <td><center><img alt="SFWIG Home page" src="https://github.com/JaumeAlbardaner/SFWIG/blob/master/img/SFWIG1.png" />
             </td>
-            <td><center><img alt="Normal IG Home page" src="https://github.com/JaumeAlbardaner/SFWIG/img/NORM1.png" />
+            <td><center><img alt="Normal IG Home page" src="https://github.com/JaumeAlbardaner/SFWIG/blob/master/img/NORM1.png" />
             </td>
         </tr>
         <!-- Row 2 -->
         <tr> 
-            <td><center><img alt="SFWIG DM page" src="https://github.com/JaumeAlbardaner/SFWIG/img/SFWIG2.png" />
+            <td><center><img alt="SFWIG DM page" src="https://github.com/JaumeAlbardaner/SFWIG/blob/master/img/SFWIG2.png" />
             </td>
-            <td><center><img alt="Normal IG DM page" src="https://github.com/JaumeAlbardaner/SFWIG/img/NORM2.png" />
+            <td><center><img alt="Normal IG DM page" src="https://github.com/JaumeAlbardaner/SFWIG/blob/master/img/NORM2.png" />
             </td>
         </tr>
     </tbody>
