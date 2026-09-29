@@ -53,6 +53,10 @@ The app is not perfect, I don't know if I can legally add stuff on the HTML, so 
 Finding other users can still be performed by sending them a DM.
 
 
+## Chats
+
+Messages support the app's gestures: double tap to like, hold to react and swipe right to reply. The phone's "Back" closes an open reel or menu before leaving the chat.
+
 ## Known issues
 
 * Some features (e.g. notes with music) only exist in the official Instagram app and are not available on the web version this app wraps.

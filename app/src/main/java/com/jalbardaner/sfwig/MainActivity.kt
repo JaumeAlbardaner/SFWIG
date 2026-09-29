@@ -16,6 +16,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 class MainActivity : ComponentActivity() {
     private lateinit var myWebView: WebView
 
+    // Hides the doom-scrolling entry points and adds chat gestures, see assets/sfwig.js
+    private val pageScript by lazy { assets.open("sfwig.js").bufferedReader().use { it.readText() } }
+
     private val backCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
             // Overlays such as a reel opened from a chat have no history entry of their own, so
@@ -60,12 +63,12 @@ class MainActivity : ComponentActivity() {
             // finishes in case the first attempt was too early. The script ignores repeated injections.
             override fun onPageCommitVisible(view: WebView, url: String?) {
                 super.onPageCommitVisible(view, url)
-                view.evaluateJavascript(FILTER_SCRIPT, null)
+                view.evaluateJavascript(pageScript, null)
             }
 
             override fun onPageFinished(view: WebView, url: String?) {
                 super.onPageFinished(view, url)
-                view.evaluateJavascript(FILTER_SCRIPT, null)
+                view.evaluateJavascript(pageScript, null)
             }
 
             // Instagram's root page is the "For you" feed (it lands there after login, and going back
@@ -133,89 +136,36 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val HOME_URL = "https://www.instagram.com/?variant=following"
 
-        // Closes the topmost visible dialog (reel viewer, post, menu) and returns true, or returns
-        // false when there is none. If the same dialog survived the previous attempt, give up and
-        // return false so Back never gets stuck.
+        // Closes the topmost overlay and returns true, or returns false when there is none: a dialog
+        // (reaction picker, post, menu), or else a full-screen viewer like a reel opened from a chat,
+        // which is not a dialog but a fixed layer with a Close button. If the same overlay survived
+        // the previous attempt, give up and return false so Back never gets stuck.
         private val CLOSE_OVERLAY_SCRIPT = """
             (function () {
-                var dialog = null;
+                function visible(e) { return e.getClientRects().length > 0; }
+                var dialog = null, viewerClose = null;
                 document.querySelectorAll('[role="dialog"]').forEach(function (d) {
-                    if (d.getClientRects().length) dialog = d;
+                    if (visible(d)) dialog = d;
                 });
-                if (!dialog || dialog === window.__sfwigLastDialog) return false;
-                window.__sfwigLastDialog = dialog;
-                var close = dialog.querySelector('[aria-label="Close"]');
+                if (!dialog) document.querySelectorAll('[aria-label="Close"]').forEach(function (c) {
+                    if (!visible(c)) return;
+                    for (var e = c, i = 0; e && i < 6; e = e.parentElement, i++) {
+                        if (getComputedStyle(e).position === 'fixed') { viewerClose = c; return; }
+                    }
+                });
+                var overlay = dialog || viewerClose;
+                if (!overlay || overlay === window.__sfwigLastOverlay) return false;
+                window.__sfwigLastOverlay = overlay;
+                var close = dialog ? dialog.querySelector('[aria-label="Close"]') : viewerClose;
                 if (close) {
                     (close.closest('button, [role="button"]') || close)
                         .dispatchEvent(new MouseEvent('click', { bubbles: true }));
                 } else {
-                    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
+                    // Instagram listens for Escape on the focused element inside the dialog
+                    (document.activeElement || document.body).dispatchEvent(
+                        new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape', keyCode: 27, bubbles: true }));
                 }
                 return true;
-            })();
-        """.trimIndent()
-
-        // Hides (instead of removing) the doom-scrolling entry points whenever the page changes.
-        // Removing nodes that React owns breaks Instagram's navigation, and re-evaluating on every
-        // change means a Back button hidden too early is shown again once the chat has loaded.
-        private val FILTER_SCRIPT = """
-            (function () {
-                if (window.__sfwig) return;
-                window.__sfwig = true;
-
-                var hidden = [];
-
-                function ancestor(el, levels) {
-                    while (el && levels-- > 0) el = el.parentElement;
-                    return el;
-                }
-
-                // Only ever hide small nav bar items, never something that holds the page itself
-                // (login form, cookie dialog, feed) even while it is still loading
-                function isSafe(target) {
-                    return target && target !== document.body && target !== document.documentElement &&
-                        !target.querySelector('main, [role="main"], [role="dialog"], article, form, input, textarea') &&
-                        target.getElementsByTagName('*').length * 2 < document.body.getElementsByTagName('*').length;
-                }
-
-                function collect(label, levels, out) {
-                    document.querySelectorAll('[aria-label="' + label + '"]').forEach(function (el) {
-                        // Skip icons inside something already hidden, like the old remove() did
-                        if (out.some(function (t) { return t.contains(el); })) return;
-                        var target = ancestor(el, levels);
-                        if (isSafe(target)) out.push(target);
-                    });
-                }
-
-                function update() {
-                    var targets = [];
-                    collect('Reels', 8, targets);
-                    collect('Explore', 8, targets);
-                    collect('Home', 9, targets);
-
-                    var inConversation = location.pathname.indexOf('/direct/t/') === 0 ||
-                        document.querySelector('[aria-label="Conversation information"]');
-                    if (document.querySelector('[aria-label="Notifications"]')) collect('Back', 9, targets);
-                    else if (!inConversation) collect('Back', 5, targets);
-
-                    hidden.forEach(function (el) {
-                        if (targets.indexOf(el) < 0) el.style.removeProperty('display');
-                    });
-                    targets.forEach(function (el) {
-                        el.style.setProperty('display', 'none', 'important');
-                    });
-                    hidden = targets;
-                }
-
-                var pending = false;
-                new MutationObserver(function () {
-                    if (pending) return;
-                    pending = true;
-                    setTimeout(function () {
-                        pending = false;
-                        update();
-                    }, 100);
-                }).observe(document, { childList: true, subtree: true });
             })();
         """.trimIndent()
     }
