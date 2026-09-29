@@ -38,8 +38,8 @@
             target.getElementsByTagName('*').length * 2 < document.body.getElementsByTagName('*').length;
     }
 
-    function collect(label, levels, out) {
-        document.querySelectorAll('[aria-label="' + label + '"]').forEach(function (el) {
+    function collect(selector, levels, out) {
+        document.querySelectorAll(selector).forEach(function (el) {
             // Skip icons inside something already hidden, like the old remove() did
             if (out.some(function (t) { return t.contains(el); })) return;
             var target = ancestor(el, levels);
@@ -81,13 +81,12 @@
         document.documentElement.toggleAttribute('data-sfwig-chat', path.indexOf('/direct/') === 0);
 
         var targets = [];
-        collect('Reels', 8, targets);
+        // Only the Reels nav button: a story that shares a reel has a "Reels" label in its header too
+        collect('a[href="/reels/"] [aria-label="Reels"]', 8, targets);
 
         // The DM inbox header has a Back arrow to the home feed. Chats keep theirs, and the feed
         // title's arrow is handled by the CSS above.
-        var inConversation = path.indexOf('/direct/t/') === 0 ||
-            document.querySelector('[aria-label="Conversation information"]');
-        if (!inConversation && !document.querySelector('[aria-label="Notifications"]')) collect('Back', 5, targets);
+        if (path.indexOf('/direct/inbox') === 0) collect('[aria-label="Back"]', 5, targets);
 
         collectAppPromos(targets);
 
