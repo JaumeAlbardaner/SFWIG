@@ -124,10 +124,20 @@ class MainActivity : ComponentActivity() {
                     return el;
                 }
 
+                // Only ever hide small nav bar items, never something that holds the page itself
+                // (login form, cookie dialog, feed) even while it is still loading
+                function isSafe(target) {
+                    return target && target !== document.body && target !== document.documentElement &&
+                        !target.querySelector('main, [role="main"], [role="dialog"], article, form, input, textarea') &&
+                        target.getElementsByTagName('*').length * 2 < document.body.getElementsByTagName('*').length;
+                }
+
                 function collect(label, levels, out) {
                     document.querySelectorAll('[aria-label="' + label + '"]').forEach(function (el) {
+                        // Skip icons inside something already hidden, like the old remove() did
+                        if (out.some(function (t) { return t.contains(el); })) return;
                         var target = ancestor(el, levels);
-                        if (target) out.push(target);
+                        if (isSafe(target)) out.push(target);
                     });
                 }
 
@@ -155,10 +165,10 @@ class MainActivity : ComponentActivity() {
                 new MutationObserver(function () {
                     if (pending) return;
                     pending = true;
-                    requestAnimationFrame(function () {
+                    setTimeout(function () {
                         pending = false;
                         update();
-                    });
+                    }, 100);
                 }).observe(document, { childList: true, subtree: true });
             })();
         """.trimIndent()
