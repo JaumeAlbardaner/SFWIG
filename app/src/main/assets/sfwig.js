@@ -82,7 +82,6 @@
 
         var targets = [];
         collect('Reels', 8, targets);
-        collect('Home', 9, targets);
 
         // The DM inbox header has a Back arrow to the home feed. Chats keep theirs, and the feed
         // title's arrow is handled by the CSS above.
@@ -110,6 +109,21 @@
             update();
         }, 100);
     }).observe(document, { childList: true, subtree: true });
+
+    // The Home button leads to the "For you" feed, so send it to "Following" instead, through
+    // Instagram's own router (no reload). On Following already, it scrolls back to the top.
+    window.addEventListener('click', function (e) {
+        var home = e.target.closest && e.target.closest('a[href="/"]');
+        if (!home || home.closest('header')) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        if (location.pathname === '/' && /[?&]variant=following\b/.test(location.search)) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            history.pushState(null, '', '/?variant=following');
+            window.dispatchEvent(new PopStateEvent('popstate', { state: null }));
+        }
+    }, true);
 
     // Chat gestures. Each message row holds the bubble and a hover-only toolbar with React,
     // Reply and More buttons, which a touchscreen can never reveal, so press them directly.
