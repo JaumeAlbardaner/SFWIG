@@ -2,6 +2,7 @@ package com.jalbardaner.sfwig
 
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.webkit.CookieManager
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -15,11 +16,24 @@ import androidx.activity.result.contract.ActivityResultContracts
 class MainActivity : ComponentActivity() {
     private lateinit var myWebView: WebView
 
-    private val backCallback = object : OnBackPressedCallback(false) {
+    private val backCallback = object : OnBackPressedCallback(true) {
         override fun handleOnBackPressed() {
-            myWebView.goBack()
+            // Overlays such as a reel opened from a chat have no history entry of their own, so
+            // close them first instead of going back past the chat
+            myWebView.evaluateJavascript(CLOSE_OVERLAY_SCRIPT) { closed ->
+                if (closed == "true") return@evaluateJavascript
+                if (myWebView.canGoBack()) {
+                    myWebView.goBack()
+                } else {
+                    isEnabled = false
+                    onBackPressedDispatcher.onBackPressed()
+                    isEnabled = true
+                }
+            }
         }
     }
+
+    private var lastFollowingRedirect = 0L
 
     // Pending <input type="file"> request from Instagram's upload dialogs (posts, stories, profile picture)
     private var filePathCallback: ValueCallback<Array<Uri>>? = null
@@ -54,9 +68,19 @@ class MainActivity : ComponentActivity() {
                 view.evaluateJavascript(FILTER_SCRIPT, null)
             }
 
+            // Instagram's root page is the "For you" feed (it lands there after login, and going back
+            // reaches it), so swap it for "Following" in place, leaving no For you entry in the history
             override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
                 super.doUpdateVisitedHistory(view, url, isReload)
-                backCallback.isEnabled = view.canGoBack()
+                val uri = Uri.parse(url ?: return)
+                val isForYou = uri.host == "www.instagram.com" && uri.path.orEmpty().trimEnd('/').isEmpty() &&
+                    uri.getQueryParameter("variant") != "following"
+                // The time check stops a redirect loop in case Instagram ever drops the parameter
+                val now = SystemClock.elapsedRealtime()
+                if (isForYou && now - lastFollowingRedirect > 5000) {
+                    lastFollowingRedirect = now
+                    view.evaluateJavascript("location.replace('$HOME_URL')", null)
+                }
             }
         }
 
@@ -108,6 +132,28 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val HOME_URL = "https://www.instagram.com/?variant=following"
+
+        // Closes the topmost visible dialog (reel viewer, post, menu) and returns true, or returns
+        // false when there is none. If the same dialog survived the previous attempt, give up and
+        // return false so Back never gets stuck.
+        private val CLOSE_OVERLAY_SCRIPT = """
+            (function () {
+                var dialog = null;
+                document.querySelectorAll('[role="dialog"]').forEach(function (d) {
+                    if (d.getClientRects().length) dialog = d;
+                });
+                if (!dialog || dialog === window.__sfwigLastDialog) return false;
+                window.__sfwigLastDialog = dialog;
+                var close = dialog.querySelector('[aria-label="Close"]');
+                if (close) {
+                    (close.closest('button, [role="button"]') || close)
+                        .dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                } else {
+                    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', keyCode: 27, bubbles: true }));
+                }
+                return true;
+            })();
+        """.trimIndent()
 
         // Hides (instead of removing) the doom-scrolling entry points whenever the page changes.
         // Removing nodes that React owns breaks Instagram's navigation, and re-evaluating on every
