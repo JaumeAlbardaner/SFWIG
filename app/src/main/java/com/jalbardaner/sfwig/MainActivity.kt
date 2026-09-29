@@ -1,5 +1,6 @@
 package com.jalbardaner.sfwig
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.os.SystemClock
@@ -56,6 +57,8 @@ class MainActivity : ComponentActivity() {
             // Instagram keeps the dark mode choice and "pop-up already dismissed" flags in
             // localStorage, which WebView disables by default
             domStorageEnabled = true
+            // Let stories start playing with sound when they advance on their own, like the app does
+            mediaPlaybackRequiresUserGesture = false
         }
 
         myWebView.webViewClient = object : WebViewClient() {
@@ -88,6 +91,10 @@ class MainActivity : ComponentActivity() {
         }
 
         myWebView.webChromeClient = object : WebChromeClient() {
+            // WebView shows a grey play button on every video until its first frame is ready;
+            // a transparent poster shows the story's background instead
+            override fun getDefaultVideoPoster(): Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
             override fun onShowFileChooser(
                 webView: WebView,
                 callback: ValueCallback<Array<Uri>>,
