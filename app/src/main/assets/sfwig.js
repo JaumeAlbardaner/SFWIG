@@ -124,6 +124,49 @@
         }
     }, true);
 
+    // Feed videos pause on every tap, so a double tap only paused and resumed them. Hold a tap on
+    // a video briefly: a second tap likes the post (never unlikes, like the app), otherwise the
+    // tap is passed on and pauses as usual.
+    var heldTap = null;
+
+    function likePost(player) {
+        var article = player.closest('article');
+        var like = article && article.querySelector('[aria-label="Like"]');
+        if (like) press(like.closest('[role="button"], button') || like);
+        var heart = document.createElement('div');
+        heart.textContent = '❤️';
+        heart.style.cssText = 'position:absolute;left:50%;top:50%;font-size:96px;pointer-events:none;z-index:9;' +
+            'transform:translate(-50%,-50%) scale(0.6);opacity:0.95;transition:transform 250ms,opacity 400ms 350ms';
+        player.appendChild(heart);
+        requestAnimationFrame(function () {
+            heart.style.transform = 'translate(-50%,-50%) scale(1)';
+            heart.style.opacity = '0';
+        });
+        setTimeout(function () { heart.remove(); }, 900);
+    }
+
+    window.addEventListener('click', function (e) {
+        if (!e.isTrusted) return;
+        var player = e.target.closest && e.target.closest('article [aria-label="Video player"]');
+        if (!player) return;
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        if (heldTap && heldTap.player === player) {
+            clearTimeout(heldTap.timer);
+            heldTap = null;
+            likePost(player);
+            return;
+        }
+        var target = e.target;
+        heldTap = {
+            player: player,
+            timer: setTimeout(function () {
+                heldTap = null;
+                target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            }, 300)
+        };
+    }, true);
+
     // Chat gestures. Each message row holds the bubble and a hover-only toolbar with React,
     // Reply and More buttons, which a touchscreen can never reveal, so press them directly.
     function bubbleAt(target) {
