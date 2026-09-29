@@ -46,17 +46,33 @@ In order not to violate Instagram's terms of use and end like super well-made ap
 
 In the same manner that anyone could go to [instagram.com](https://www.instagram.com) and remove any element via *uBlock* or with *Inspect element*, this app works equally but on Android. 
 
-The app is nothing more than a "Browser" (Firefox/Chrome/Opera...) in which every second it is checked whether there is any component that could lead to non-desired functionalities (such as Foryou page or explore page).
+The app is nothing more than a "Browser" (Firefox/Chrome/Opera...) that hides, whenever the page changes, any component that could lead to non-desired functionalities (such as the For you page, Reels or the Explore grid). Nothing is removed from Instagram's page, it is only hidden, so navigation keeps working.
 
-The app is not perfect, I don't know if I can legally add stuff on the HTML, so as of now there is no other way to exit chats but to use the phone's built-in "Back" function.
+## What SFWIG changes
 
-Finding other users can still be performed by sending them a DM.
+**Hidden**
+* The Reels tab.
+* The "For you" feed: the Home button and the feed title always lead to the "Following" feed instead.
+* The Explore grid: the search button only shows the search bar and its results, so you can look people up without any reels underneath.
 
+**Added**
+* Feed: double tap a video to like it (Instagram's website only pauses it). Tapping once still pauses.
+* Chats: double tap a message to like it, hold it to react and swipe it right to reply, like in the app.
+* The phone's "Back" button closes an open reel, post or menu before leaving the page, so watching a reel sent in a chat no longer takes you out of the chat.
+* Posting: pick photos and videos from your gallery to upload posts and stories.
 
-## Chats
+**Kept between sessions**
+* Your login, dark mode choice and dismissed pop-ups. Dark mode also follows the phone's system setting.
 
-Messages support the app's gestures: double tap to like, hold to react and swipe right to reply. The phone's "Back" closes an open reel or menu before leaving the chat.
+## Requirements
+
+Android 7.0 or newer. Instagram's website runs inside Android System WebView, so keep WebView (or Chrome) up to date from the Play Store.
+
+## Updating
+
+Releases are currently signed with a new key each time, so Android will not install a new version over an old one: uninstall the old version first (you will need to log in again).
 
 ## Known issues
 
 * Some features (e.g. notes with music) only exist in the official Instagram app and are not available on the web version this app wraps.
+* The screenshots above are from version 1.1.
