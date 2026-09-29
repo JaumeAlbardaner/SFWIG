@@ -38,6 +38,23 @@
             target.getElementsByTagName('*').length * 2 < document.body.getElementsByTagName('*').length;
     }
 
+    // Element.toggleAttribute only exists in WebView 69+
+    function flag(name, on) {
+        if (on) document.documentElement.setAttribute(name, '');
+        else document.documentElement.removeAttribute(name);
+    }
+
+    // The biggest box around a nav link that holds no other link, i.e. the whole nav item.
+    // Unlike a fixed number of levels, this fits both the phone bottom bar and the tablet sidebar.
+    function navItem(link) {
+        var item = link;
+        while (item.parentElement && item.parentElement !== document.body &&
+            item.parentElement.querySelectorAll('a[href], [role="link"]').length === 1) {
+            item = item.parentElement;
+        }
+        return item;
+    }
+
     function collect(selector, levels, out) {
         document.querySelectorAll(selector).forEach(function (el) {
             // Skip icons inside something already hidden, like the old remove() did
@@ -77,12 +94,15 @@
 
     function update() {
         var path = location.pathname;
-        document.documentElement.toggleAttribute('data-sfwig-explore', path.indexOf('/explore') === 0);
-        document.documentElement.toggleAttribute('data-sfwig-chat', path.indexOf('/direct/') === 0);
+        flag('data-sfwig-explore', path.indexOf('/explore') === 0);
+        flag('data-sfwig-chat', path.indexOf('/direct/') === 0);
 
         var targets = [];
-        // Only the Reels nav button: a story that shares a reel has a "Reels" label in its header too
-        collect('a[href="/reels/"] [aria-label="Reels"]', 8, targets);
+        // Only the Reels nav button (a story that shares a reel has a "Reels" label in its header too)
+        document.querySelectorAll('a[href="/reels/"]').forEach(function (link) {
+            var item = navItem(link);
+            if (isSafe(item) && !targets.some(function (t) { return t.contains(item); })) targets.push(item);
+        });
 
         // The DM inbox header has a Back arrow to the home feed. Chats keep theirs, and the feed
         // title's arrow is handled by the CSS above.
