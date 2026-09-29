@@ -55,5 +55,4 @@ Finding other users can still be performed by sending them a DM.
 
 ## Known issues
 
-* Light mode is the default configuration. Even if changed, once the app is restarted it is restored as default value.
-* Cannot exit DM's without phone's built-in "Back" function.
+* Some features (e.g. notes with music) only exist in the official Instagram app and are not available on the web version this app wraps.

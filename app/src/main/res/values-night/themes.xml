@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Dark app theme makes the WebView report prefers-color-scheme: dark to Instagram -->
+    <style name="Theme.SFWIG" parent="android:Theme.Material.NoActionBar" />
+</resources>
